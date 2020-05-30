@@ -10,14 +10,14 @@ jobs:
 
     runs-on: ubuntu-latest
     strategy:
-        fail-fast: true
-        matrix:
-            php: [7.3, 7.4]
+      fail-fast: true
+      matrix:
+          php: [7.3, 7.4]
             
     name: PHP${{ matrix.php }}
     steps:
       - name: checkout code
-      - uses: actions/checkout@v2
+        uses: actions/checkout@v2
 
       - name: Validate composer.json and composer.lock
         run: composer validate
@@ -34,9 +34,9 @@ jobs:
       - name: Setup PHP
         uses: shivammathur/setup-php@v1
         with:
-            php-version: ${{ matrix.php }}
-            extensions: mbstring, intl
-            coverage: none
+          php-version: ${{ matrix.php }}
+          extensions: mbstring, intl
+          coverage: none
 
       - name: Install dependencies
         if: steps.composer-cache.outputs.cache-hit != 'true'
