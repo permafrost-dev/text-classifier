@@ -1,0 +1,24 @@
+{
+    "name": "permafrost-dev/text-classifier",
+    "description": "Assigns input text a category based on a training model",
+    "type": "library",
+    "license": "MIT",
+    "require": {
+        "php": "^7.3",
+        "ext-json": "*"
+    },
+    "require-dev": {
+        "friendsofphp/php-cs-fixer": "^2.16",
+        "phpunit/phpunit": "^9.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "Permafrost\\TextClassifier\\": "src"
+        }
+    },
+    "config": {
+        "sort-packages": true
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
+}
