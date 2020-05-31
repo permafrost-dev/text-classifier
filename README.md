@@ -8,49 +8,46 @@ See `examples/sentiment.php` for a working demo.
 ```php
 <?php
 
+use Skyeng\Lemmatizer;
 use Permafrost\TextClassifier\TextClassifier;
 use Permafrost\TextClassifier\Classifiers\NaiveBayes;
+use Permafrost\TextClassifier\Processors\TextLemmatizer;
 use Permafrost\TextClassifier\Tokenizers\BasicTokenizer;
+use Permafrost\TextClassifier\Tokenizers\NGramTokenizer;
+use Permafrost\TextClassifier\Processors\StopwordRemover;
 use Permafrost\TextClassifier\Processors\BasicTextNormalizer;
+use Permafrost\TextClassifier\Pipelines\TextProcessingPipeline;
 
-//first, create the tokenizer, text preprocessor, and classifier
-// - a number of training words (text) and categories are provided to the classifier
-// - the preprocessor normalizes the text before tokenization
-// - once it's been processed, the text is converted into tokens (words, bigrams, trigrams, ngrams, etc.)
-//
-$tokenizer = new BasicTokenizer();
-$processor = new BasicTextNormalizer();
-$classifier = new NaiveBayes();
+//Use different processors for training and classifying.  Since we're using keyword tokens, add all lemmas for each token
+//during training to increase the size of the training data.
+$trainingProcessors = [new TextLemmatizer(new Lemmatizer()), new BasicTextNormalizer()];
 
-//next, create an instance of TextClassifier with the tokenizer, processor, and classifier we've selected
-$textClassifier = new TextClassifier($processor, $tokenizer, $classifier);
+//When classifying, let's remove stopwords in addition to basic text normalization, because we'll be processing phrases.
+$classifyProcessors = [new StopwordRemover(), new BasicTextNormalizer()];
 
-//now we teach the classifier how to classify text using a training file named sentiment-train.txt,
-//which contains the following:
-//positive|good
-//positive|fantastic
-//...
-//negative|terrible
-//...
+//Let's use a basic tokenizer (word-based tokens), and an NGram tokenizer, which creates trigrams (N=3).
+//This should give us a good mix of keywords and partial keywords to look for when classifying text.
+$tokenizers = [new BasicTokenizer(), new NGramTokenizer(3)];
+
+$textClassifier = new TextClassifier(
+    new TextProcessingPipeline($trainingProcessors, $classifyProcessors),
+    $tokenizers,
+    new NaiveBayes() //use Naive-Bayes as the classifier
+);
+
 $textClassifier->trainFromFile(__DIR__ . '/sentiment-train.txt');
 
-//now that we've trained the classifier, we'll give it some sample phrases to classify:
 $phrases = [
     'this is fantastic',
-    'everything is great',
-    'this is terrible!',
-    'everything is unpleasant',
+    'this is terrible',
 ];
 
-foreach($phrases as $phrase) {
+foreach ($phrases as $phrase) {
     echo $phrase . ' - ' . $textClassifier->classify($phrase) . PHP_EOL;
 }
 ```
 
 Resulting output:
-```
-this is fantastic - positive
-everything is great - positive
-this is terrible! - negative
-everything is unpleasant - negative
-```
+
+`this is fantastic - positive`
+`this is terrible! - negative`
