@@ -4,14 +4,15 @@
  * The original class was taken from niiknow/bayes.
  *
  * @see https://github.com/niiknow/bayes
+ *
  * @license MIT
  */
 
 namespace Permafrost\TextClassifier\Classifiers;
 
-use Permafrost\TextClassifier\Tokenizers\Tokenizer;
-use Permafrost\TextClassifier\Processors\TextProcessor;
-
+use Permafrost\TextClassifier\Pipelines\BasicPipeline;
+use Permafrost\TextClassifier\Pipelines\TextProcessingPipeline;
+use Permafrost\TextClassifier\Pipelines\TextTokenizingPipeline;
 
 class NaiveBayes implements Classifier
 {
@@ -90,32 +91,31 @@ class NaiveBayes implements Classifier
      */
     protected $tokenizer;
 
-    /** @var \Permafrost\TextClassifier\Processors\TextProcessor $processor */
-    protected $processor;
+    /** @var \Permafrost\TextClassifier\Pipelines\TextProcessingPipeline $processingPipeline */
+    protected $processingPipeline;
 
-    /** @var \Permafrost\TextClassifier\Tokenizers\Tokenizer $tokenizer */
-    protected $tokenizerObject;
+    /** @var \Permafrost\TextClassifier\Pipelines\TextTokenizingPipeline $tokenizer */
+    protected $tokenizerPipeline;
 
     /**
      * Initialize an instance of a Naive-Bayes Classifier.
-     *
      */
     public function __construct()
     {
         // set options object
     }
 
-    public function initialize(TextProcessor $processor, Tokenizer $tokenizer, array $options = []): void
+    public function initialize(TextProcessingPipeline $processor, TextTokenizingPipeline $tokenizer, array $options = []): void
     {
-        $this->processor = $processor;
-        $this->tokenizerObject = $tokenizer;
+        $this->processingPipeline = $processor;
+        $this->tokenizerPipeline = $tokenizer;
         $this->options = $options;
 
         if (!isset($this->options['tokenizer'])) {
-            $this->options['tokenizer'] = function ($text) {
-                $text = $this->processor->process($text);
+            $this->options['tokenizer'] = function ($text, $mode) {
+                $text = $this->processingPipeline->run($text, $mode);
 
-                return $this->tokenizerObject->tokenize($text);
+                return $this->tokenizerPipeline->run($text, $mode);
             };
         }
 
@@ -136,7 +136,7 @@ class NaiveBayes implements Classifier
         $chosenCategory = null;
 
         if ($that->totalDocuments > 0) {
-            $probabilities = $that->probabilities($text);
+            $probabilities = $that->probabilities($text, BasicPipeline::MODE_CLASSIFY);
 
             // iterate thru our categories to find the one with max probability
             // for this text
@@ -165,7 +165,7 @@ class NaiveBayes implements Classifier
      *
      * @return array hashmap of token frequency
      */
-    public function frequencyTable($tokens)
+    public function frequencyTable($tokens): array
     {
         $frequencyTable = [];
         foreach ($tokens as $token) {
@@ -201,9 +201,6 @@ class NaiveBayes implements Classifier
     /**
      * Teach your classifier.
      *
-     * @param string $text
-     * @param string $category
-     *
      * @return NaiveBayes
      */
     public function learn(string $text, string $category)
@@ -220,7 +217,7 @@ class NaiveBayes implements Classifier
         ++$that->totalDocuments;
 
         // normalize the text into a word array
-        $tokens = ($that->tokenizer)($text);
+        $tokens = ($that->tokenizer)($text, BasicPipeline::MODE_TRAIN);
 
         // get a frequency count for each token in the text
         $frequencyTable = $that->frequencyTable($tokens);
@@ -251,16 +248,17 @@ class NaiveBayes implements Classifier
      * Extract the probabilities for each known category.
      *
      * @param string $text
+     * @param string $mode
      *
      * @return array probabilities by category or null
      */
-    public function probabilities($text)
+    public function probabilities($text, $mode = BasicPipeline::MODE_UNSPECIFIED): array
     {
         $that = $this;
         $probabilities = [];
 
         if ($that->totalDocuments > 0) {
-            $tokens = ($that->tokenizer)($text);
+            $tokens = ($that->tokenizer)($text, $mode);
             $frequencyTable = $that->frequencyTable($tokens);
 
             // for this text
@@ -284,7 +282,7 @@ class NaiveBayes implements Classifier
 
     public function categorizeMulti(string $text, int $categoryCount = 3): array
     {
-        $probabilities = $this->probabilities($text);
+        $probabilities = $this->probabilities($text, BasicPipeline::MODE_CLASSIFY);
 
         arsort($probabilities);
 

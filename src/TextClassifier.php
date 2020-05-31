@@ -2,23 +2,41 @@
 
 namespace Permafrost\TextClassifier;
 
-use Permafrost\TextClassifier\Classifiers\Classifier;
+use Permafrost\TextClassifier\Pipelines\TextTokenizingPipeline;
 use Permafrost\TextClassifier\Tokenizers\Tokenizer;
+use Permafrost\TextClassifier\Classifiers\Classifier;
 use Permafrost\TextClassifier\Processors\TextProcessor;
+use Permafrost\TextClassifier\Pipelines\TextProcessingPipeline;
 
 class TextClassifier
 {
     /** @var \Permafrost\TextClassifier\Classifiers\Classifier $classifier */
     public $classifier;
 
-    /** @var \Permafrost\TextClassifier\Processors\TextProcessor $processor */
+    /** @var \Permafrost\TextClassifier\Pipelines\TextProcessingPipeline $processor */
     protected $processor;
 
-    /** @var \Permafrost\TextClassifier\Tokenizers\Tokenizer $tokenizer */
+    /** @var \Permafrost\TextClassifier\Pipelines\TextTokenizingPipeline $tokenizer */
     protected $tokenizer;
 
-    public function __construct(TextProcessor $processor, Tokenizer $tokenizer, Classifier $classifier)
+    public function __construct($processor, $tokenizer, Classifier $classifier)
     {
+        if ($processor instanceof TextProcessor) {
+            $processor = [$processor];
+        }
+
+        if (is_array($processor)) {
+            $processor = new TextProcessingPipeline($processor);
+        }
+
+        if ($tokenizer instanceof Tokenizer) {
+            $tokenizer = [$tokenizer];
+        }
+
+        if (is_array($tokenizer)) {
+            $tokenizer = new TextTokenizingPipeline($tokenizer);
+        }
+
         $this->processor = $processor;
         $this->tokenizer = $tokenizer;
         $this->classifier = $classifier;
@@ -35,7 +53,6 @@ class TextClassifier
     {
         $data = trim(file_get_contents($filename));
         $lines = explode(PHP_EOL, $data);
-
 
         $result = [];
 
@@ -63,9 +80,6 @@ class TextClassifier
      *      category A|sample text
      *      category B|some other text
      *      ...
-     *
-     * @param string $filename
-     * @return self
      */
     public function trainFromFile(string $filename): self
     {
@@ -79,9 +93,6 @@ class TextClassifier
      *
      * $items should be an array of strings in the format:
      *      ['category a|sample text abc', 'category b|my text def']
-     *
-     * @param array $items
-     * @return self
      */
     public function train(array $items): self
     {
@@ -106,7 +117,7 @@ class TextClassifier
         $result = [];
 
         foreach ($lines as $line) {
-            $result[] = $this->classify($line).'|'.$line;
+            $result[] = $this->classify($line) . '|' . $line;
         }
 
         print_r($result);
@@ -136,8 +147,6 @@ class TextClassifier
 
     /**
      * Save the trained model to a file.
-     *
-     * @return bool
      */
     public function saveTrained(string $filename): bool
     {
@@ -148,8 +157,6 @@ class TextClassifier
 
     /**
      * Load a trained model previously saved to file.
-     *
-     * @return self
      */
     public function loadTrained(string $filename): self
     {

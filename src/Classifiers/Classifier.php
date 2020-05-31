@@ -2,8 +2,8 @@
 
 namespace Permafrost\TextClassifier\Classifiers;
 
-use Permafrost\TextClassifier\Tokenizers\Tokenizer;
-use Permafrost\TextClassifier\Processors\TextProcessor;
+use Permafrost\TextClassifier\Pipelines\TextProcessingPipeline;
+use Permafrost\TextClassifier\Pipelines\TextTokenizingPipeline;
 
 interface Classifier
 {
@@ -20,12 +20,12 @@ interface Classifier
     /**
      * Initialize the classifier object.
      *
-     * @param \Permafrost\TextClassifier\Processors\TextProcessor $processor
-     * @param \Permafrost\TextClassifier\Tokenizers\Tokenizer $tokenizer
+     * @param \Permafrost\TextClassifier\Pipelines\TextProcessingPipeline $processor
+     * @param \Permafrost\TextClassifier\Pipelines\TextTokenizingPipeline $tokenizer
      *
      * @return mixed
      */
-    public function initialize(TextProcessor $processor, Tokenizer $tokenizer): void;
+    public function initialize(TextProcessingPipeline $processor, TextTokenizingPipeline $tokenizer): void;
 
     /**
      * Teach your classifier.
