@@ -18,15 +18,17 @@ use Permafrost\TextClassifier\Processors\StopwordRemover;
 use Permafrost\TextClassifier\Processors\BasicTextNormalizer;
 use Permafrost\TextClassifier\Pipelines\TextProcessingPipeline;
 
-//Use different processors for training and classifying.  Since we're using keyword tokens, add all lemmas for each token
-//during training to increase the size of the training data.
+//Use different processors for training and classifying.  Since we're using keyword tokens,
+//add all lemmas for each token during training to increase the size of the training data.
 $trainingProcessors = [new TextLemmatizer(new Lemmatizer()), new BasicTextNormalizer()];
 
-//When classifying, let's remove stopwords in addition to basic text normalization, because we'll be processing phrases.
+//When classifying, let's remove stopwords in addition to basic text normalization, because
+//we'll be processing phrases.
 $classifyProcessors = [new StopwordRemover(), new BasicTextNormalizer()];
 
-//Let's use a basic tokenizer (word-based tokens), and an NGram tokenizer, which creates trigrams (N=3).
-//This should give us a good mix of keywords and partial keywords to look for when classifying text.
+//Let's use a basic tokenizer (word-based tokens), and an NGram tokenizer, which creates 
+//trigrams (N=3). This should give us a good mix of keywords and partial keywords to look
+//for when classifying text.
 $tokenizers = [new BasicTokenizer(), new NGramTokenizer(3)];
 
 $textClassifier = new TextClassifier(
